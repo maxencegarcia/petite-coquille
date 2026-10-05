@@ -10,7 +10,7 @@ int main() {
     char ch[100] = "";
     char opt[100] = "";
     char *argv[100];
-    char *argv2pipe[100];
+
     while ((strcmp(ch, "exit") != 0 )) {
         printf("$");
 
@@ -59,6 +59,27 @@ int main() {
         int erreurredirect = 0;
         int pipeverif = 0;
         int fd[2];
+        int nbpipe = 0;
+        int emplacementpipe[100];
+        int emplac = 0;
+        for (int i = 0; argv[i] != NULL; i++) {
+            if (strcmp(argv[i], "|") == 0) {
+                nbpipe+=1;
+                int plaq = i +1;
+                emplacementpipe[emplac] = plaq;
+                emplac++;
+
+            }
+
+        }
+        if (nbpipe != 0) {
+            nbpipe += 1;
+        }
+        char **argv2pipe[nbpipe];
+        argv2pipe[0] = &argv[0];
+        // if (nbpipe!=0)
+        //     nbpipe -= 1; a verif si on garde ou pas car risque de pb de memoire 
+
         for (i = 0; argv[i] != NULL; i++) {
             if (strcmp(argv[i], ">") == 0) {
                 i++;
@@ -71,17 +92,7 @@ int main() {
                 argv[i] = NULL;
                 sortie = 1;
             }
-            else if (strcmp(argv[i], "|") == 0) {
-                int z = 0;
-                for (int j = i+1; argv[j] != NULL; j++) {
-                    argv2pipe[z] = argv[j];
-                    z++;
-                }
-                argv2pipe[z] = NULL;
-                argv[i] = NULL;
-                pipeverif = 1;
 
-            }
             else if (strcmp(argv[i], "<") == 0) {
                 i++;
                 fichi = open(argv[i], O_RDONLY);
@@ -106,6 +117,22 @@ int main() {
                 argv[i] = NULL;
                 sortie = 1;
             }
+            else if (strcmp(argv[i], "|") == 0) {
+                // int z = 0;
+                // for (int j = i+1; argv[j] != NULL; j++) {
+                //     argv2pipe[z] = argv[j];
+                //     z++;
+                // }
+
+
+                // argv2pipe[z] = NULL;
+                argv[i] = NULL;
+                pipeverif = 1;
+
+            }
+        }
+        for (int j =1; j<nbpipe; j++) {
+            argv2pipe[j] = &argv[emplacementpipe[j]];
         }
         if (erreurredirect== -1)
             continue;
@@ -118,7 +145,11 @@ int main() {
                     perror("fork gosse 1");
                 }
                 if (enfant1 == 0) {
+                    if (fichi!= -2 && sortie != -2) {
+                        dup2(fichi, sortie);
+                    }
                     dup2(fd[1], STDOUT_FILENO);
+
                     close(fd[0]);
                     close(fd[1]);
                     if (execvp(argv[0], argv) == -1) {
