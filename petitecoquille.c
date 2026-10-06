@@ -5,7 +5,6 @@
 # include <unistd.h>
 # include <sys/wait.h>
 
-
 int main() {
     char ch[100] = "";
     char opt[100] = "";
@@ -20,7 +19,6 @@ int main() {
             ch[strlen(ch) - 1] = '\0';
         }
         printf("%s", ch);
-        // size_t taille = strlen(ch);
         if (strcmp(ch, "")==0) {
             printf("commande ne peut pas etre null\n");
             continue;
@@ -36,10 +34,6 @@ int main() {
 
         if (strcmp(argv[0], "exit") == 0)
             exit(0);
-
-        // for (int i = 0; argv[i] != NULL; i++) {
-        //     printf("%s\n", argv[i]);
-        // }
         if (strcmp(argv[0], "cd") == 0) {
             if (argv[1] == NULL) {
                 argv[1] = getenv("HOME");
@@ -68,7 +62,6 @@ int main() {
                 int plaq = i +1;
                 emplacementpipe[emplac] = plaq;
                 emplac++;
-
             }
 
         }
@@ -77,9 +70,6 @@ int main() {
         }
         char **argv2pipe[nbpipe];
         argv2pipe[0] = &argv[0];
-        // if (nbpipe!=0)
-        //     nbpipe -= 1; a verif si on garde ou pas car risque de pb de memoire 
-
         for (i = 0; argv[i] != NULL; i++) {
             if (strcmp(argv[i], ">") == 0) {
                 i++;
@@ -101,7 +91,6 @@ int main() {
                     erreurredirect = -1 ;
                 }
 
-
                 i-=1;
                 argv[i] = NULL;
                 sortie = 0;
@@ -118,14 +107,6 @@ int main() {
                 sortie = 1;
             }
             else if (strcmp(argv[i], "|") == 0) {
-                // int z = 0;
-                // for (int j = i+1; argv[j] != NULL; j++) {
-                //     argv2pipe[z] = argv[j];
-                //     z++;
-                // }
-
-
-                // argv2pipe[z] = NULL;
                 argv[i] = NULL;
                 pipeverif = 1;
 
@@ -169,7 +150,6 @@ int main() {
                             }
                             dup2(entreeprecedante, STDIN_FILENO);
                             entreeprecedante = fd[0];
-                            //close(fd[0]);
                             close(fd[1]);
                             close(entreeprecedante);
                             if (execvp(argv2pipe[k][0], argv2pipe[k]) == -1) {
@@ -184,7 +164,6 @@ int main() {
                             dup2(entreeprecedante, STDIN_FILENO);
                             dup2(fd[1], STDOUT_FILENO);
                             entreeprecedante = fd[0];
-                            //close(fd[0]);
                             close(fd[1]);
                             close(entreeprecedante);
                             if (execvp(argv2pipe[k][0], argv2pipe[k]) == -1) {
@@ -192,36 +171,17 @@ int main() {
                                 exit(1);
                             }
                         }
-
-
                     }
-                    // pid_t enfant2 = fork();
-                    // if (enfant2 == -1) {
-                    //     perror("fork gosse 2");
-                    // }
-                    // if (enfant2 == 0) {
-                    //     dup2(entreeprecedante, STDIN_FILENO);
-                    //     close(fd[1]);
-                    //     close(fd[0]);
-                    //     if (execvp(argv2pipe[0][0], argv2pipe[0]) == -1) {
-                    //         perror("execvp");
-                    //         exit(1);
-                    //     }
-                    // }
                     if (enfant1 != -1) {
                         close(entreeprecedante);
                         entreeprecedante = fd[0];
                         close(fd[1]);
-                        //close(fd[0]);
                         waitpid(enfant1, NULL, 0);
-                        // waitpid(enfant2, NULL, 0);
                     }
                     if (k+1 != nbpipe) {
                         pipe(fd);
                     }
                 }
-
-
             }
 
         }
