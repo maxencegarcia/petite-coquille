@@ -131,8 +131,10 @@ int main() {
 
             }
         }
+        int increpipe = 0;
         for (int j =1; j<nbpipe; j++) {
-            argv2pipe[j] = &argv[emplacementpipe[j]];
+            argv2pipe[j] = &argv[emplacementpipe[increpipe]];
+            increpipe++;
         }
         if (erreurredirect== -1)
             continue;
@@ -140,42 +142,85 @@ int main() {
             if(pipe(fd)==-1) {
                 perror("pipe");
             }else {
-                pid_t enfant1 = fork();
-                if (enfant1 == -1) {
-                    perror("fork gosse 1");
-                }
-                if (enfant1 == 0) {
-                    if (fichi!= -2 && sortie != -2) {
-                        dup2(fichi, sortie);
+                int entreeprecedante = -1;
+                pipe(fd);
+                for (int k = 0; k < nbpipe; k++) {
+                    pid_t enfant1 = fork();
+                    if (enfant1 == -1) {
+                        perror("fork gosse 1");
                     }
-                    dup2(fd[1], STDOUT_FILENO);
+                    if (enfant1 == 0) {
+                        if (entreeprecedante == -1) { // debut
+                            if (fichi!= -2 && sortie != -2) {
+                                dup2(fichi, sortie);
+                            }
+                            dup2(fd[1], STDOUT_FILENO);
+                            entreeprecedante = fd[0];
+                            close(fd[0]);
+                            close(fd[1]);
+                            if (execvp(argv2pipe[k][0], argv2pipe[k]) == -1) {
+                                perror("execvp");
+                                exit(1);
+                            }
+                        }
+                        else if (k == nbpipe-1) { // fin
+                            if (fichi!= -2 && sortie != -2) {
+                                dup2(fichi, sortie);
+                            }
+                            dup2(entreeprecedante, STDIN_FILENO);
+                            entreeprecedante = fd[0];
+                            //close(fd[0]);
+                            close(fd[1]);
+                            close(entreeprecedante);
+                            if (execvp(argv2pipe[k][0], argv2pipe[k]) == -1) {
+                                perror("execvp");
+                                exit(1);
+                            }
+                        }
+                        else { // milieu
+                            if (fichi!= -2 && sortie != -2) {
+                                dup2(fichi, sortie);
+                            }
+                            dup2(entreeprecedante, STDIN_FILENO);
+                            dup2(fd[1], STDOUT_FILENO);
+                            entreeprecedante = fd[0];
+                            //close(fd[0]);
+                            close(fd[1]);
+                            close(entreeprecedante);
+                            if (execvp(argv2pipe[k][0], argv2pipe[k]) == -1) {
+                                perror("execvp");
+                                exit(1);
+                            }
+                        }
 
-                    close(fd[0]);
-                    close(fd[1]);
-                    if (execvp(argv[0], argv) == -1) {
-                        perror("execvp");
-                        exit(1);
+
+                    }
+                    // pid_t enfant2 = fork();
+                    // if (enfant2 == -1) {
+                    //     perror("fork gosse 2");
+                    // }
+                    // if (enfant2 == 0) {
+                    //     dup2(entreeprecedante, STDIN_FILENO);
+                    //     close(fd[1]);
+                    //     close(fd[0]);
+                    //     if (execvp(argv2pipe[0][0], argv2pipe[0]) == -1) {
+                    //         perror("execvp");
+                    //         exit(1);
+                    //     }
+                    // }
+                    if (enfant1 != -1) {
+                        close(entreeprecedante);
+                        entreeprecedante = fd[0];
+                        close(fd[1]);
+                        //close(fd[0]);
+                        waitpid(enfant1, NULL, 0);
+                        // waitpid(enfant2, NULL, 0);
+                    }
+                    if (k+1 != nbpipe) {
+                        pipe(fd);
                     }
                 }
-                pid_t enfant2 = fork();
-                if (enfant2 == -1) {
-                    perror("fork gosse 2");
-                }
-                if (enfant2 == 0) {
-                    dup2(fd[0], STDIN_FILENO);
-                    close(fd[1]);
-                    close(fd[0]);
-                    if (execvp(argv2pipe[0], argv2pipe) == -1) {
-                        perror("execvp");
-                        exit(1);
-                    }
-                }
-                if (enfant1 != -1 && enfant2 != -1) {
-                    close(fd[1]);
-                    close(fd[0]);
-                    waitpid(enfant1, NULL, 0);
-                    waitpid(enfant2, NULL, 0);
-                }
+
 
             }
 
